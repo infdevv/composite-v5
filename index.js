@@ -662,12 +662,13 @@ ioSocket.on('connection', (socket) => {
 });
 
 const port = process.env.PORT || 8080;
-const host = '0.0.0.0'; // <- important on Render
+const host = '0.0.0.0';
 
-server.listen(port, host, (err) => {
+
+fastify.listen({ port, host }, (err, address) => {
   if (err) {
     console.error(err);
     process.exit(1);
   }
-  console.log(`Server is running at http://${host}:${port}`);
+  console.log(`Server is running at ${address}`);
 });
