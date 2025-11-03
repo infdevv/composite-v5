@@ -3,7 +3,7 @@ const path = require('path');
 const { Server } = require("socket.io");
 const fs = require('fs');
 const cors = require('@fastify/cors');
-import dotenv from 'dotenv';
+const dotnext = require('dotenv');
 dotenv.config();
 
 const start = Date.now();
