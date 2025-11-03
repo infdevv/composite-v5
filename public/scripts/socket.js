@@ -1,10 +1,5 @@
 // Socket.IO connection management
 import {
-    streamingGenerating,
-    streamingGeneratingPollinations,
-    streamingGeneratingYuzu,
-    streamingGeneratingYuzuG4F,
-    streamingGeneratingYuzuAuto,
     streamingGeneratingCustomEngine,
     streamingGeneratingGemini,
     stopGeneration,
@@ -537,4 +532,5 @@ export async function sendTestMessage() {
         statusSpan.textContent = 'Error';
         statusSpan.style.color = '#ff6b6b';
     }
+
 }
