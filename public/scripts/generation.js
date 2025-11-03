@@ -19,6 +19,108 @@ export function resetGenerationState() {
 }
 
 
+export async function streamingGeneratingGemini(messages, settings = {}) {
+    if (generationStopped) return;
+
+    messages = preprocessMessages(messages);
+
+    const controller = new AbortController();
+    currentGeneration = controller;
+
+    const model = document.getElementById("model").value;
+
+    let apiKey;
+    if (window.getGeminiAPIKey) {
+        apiKey = window.getGeminiAPIKey();
+    } else {
+        apiKey = document.getElementById("api-key-input")?.value;
+    }
+
+    if (!apiKey || apiKey === "[Loading...]" || apiKey === "[Not Set]") {
+        handleEmit("Error: Google AI API key not set. Please enter your API key and click 'Save API Key'.");
+        onFinish("");
+        return;
+    }
+
+    try {
+        const response = await proxyFetch("https://offshore.seabase.xyz/generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: messages,
+                stream: true,
+                temperature: settings.temperature !== undefined ? settings.temperature : 0.7,
+                max_tokens: 26000,
+                top_p: settings.top_p !== undefined ? settings.top_p : 1
+            }),
+            signal: controller.signal
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Gemini API error:", response.status, errorText);
+            handleEmit(`Error: Gemini API returned ${response.status}. ${errorText}`);
+            onFinish("");
+            return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            if (generationStopped) {
+                reader.cancel();
+                break;
+            }
+
+            const { done, value } = await reader.read();
+            if (done) {
+                onFinish("");
+                break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+                if (generationStopped) break;
+
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6).trim();
+                    if (data === '[DONE]') {
+                        onFinish("");
+                        return;
+                    }
+
+                    if (!data) continue;
+
+                    try {
+                        const parsed = JSON.parse(data);
+                        const content = parsed.choices?.[0]?.delta?.content;
+
+                        if (content !== undefined && content !== null) {
+                            handleEmit(content);
+                            console.log("Gemini Sent chunk | Delta data: " + content);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing Gemini chunk:', e, 'Raw data:', data);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Gemini streaming error:", error);
+        handleEmit(`\n\nError: ${error.message}`);
+        onFinish("");
+    }
+}
+
 async function router(messages) {
     // get last 5 messages only
     messages = messages.slice(-5);
@@ -434,4 +536,5 @@ export async function streamingGeneratingCustomEngine(messages, customEngineConf
         onFinish("");
     }
 }
+
 
