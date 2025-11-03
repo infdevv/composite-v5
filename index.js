@@ -3,6 +3,8 @@ const path = require('path');
 const { Server } = require("socket.io");
 const fs = require('fs');
 const cors = require('@fastify/cors');
+import dotenv from 'dotenv';
+dotenv.config();
 
 const start = Date.now();
 
@@ -659,10 +661,10 @@ ioSocket.on('connection', (socket) => {
     });
 });
 
-server.listen({ port: 3000 }, (err, address) => {
+server.listen({ port: process.env.port || 8080 }, (err, address) => {
   if (err) {
     console.error(err);
     process.exit(1);
   }
-  console.log(`Server is running at http://localhost:3000`);
+  console.log(`Server is running at ${address}`);
 });
