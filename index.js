@@ -661,10 +661,11 @@ ioSocket.on('connection', (socket) => {
     });
 });
 
-server.listen({ port: process.env.port || 8080 }, (err, address) => {
+server.listen({ port: process.env.PORT || 8080 }, (err, address) => {
   if (err) {
     console.error(err);
     process.exit(1);
   }
   console.log(`Server is running at ${address}`);
 });
+
